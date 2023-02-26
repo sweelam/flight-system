@@ -1,0 +1,28 @@
+server:
+  port: 8888
+
+spring:
+  cloud:
+    gateway:
+      routes:
+      - id: flight-service
+        uri: http://localhost:8082
+        predicates:
+          - Path=/api/v1/flights/**
+      - id: customer-service
+        uri: http://localhost:8081
+        predicates:
+          - Path=/api/v1/customers/**
+  application:
+    name: edge-service
+
+
+opentracing:
+  jaeger:
+    http-sender:
+      url: http://localhost:14268/api/traces
+
+
+logging:
+  level:
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
