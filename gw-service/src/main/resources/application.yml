@@ -13,8 +13,17 @@ spring:
         uri: http://localhost:8081
         predicates:
           - Path=/api/v1/customers/**
+        filters:
+          - AddResponseHeader=My-Header-Good,Good
+          - name: RequestRateLimiter
+            args:
+                redis-rate-limiter.replenishRate: 10
+                redis-rate-limiter.burstCapacity: 20
   application:
     name: edge-service
+  redis:
+    host: localhost
+    port: 6379
 
 
 opentracing:
@@ -22,7 +31,13 @@ opentracing:
     http-sender:
       url: http://localhost:14268/api/traces
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+
 
 logging:
   level:
-    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: TRACE
+    org.springframework.cloud.gateway.handler.RoutePredicateHandlerMapping: DEBUG

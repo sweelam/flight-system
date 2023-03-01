@@ -46,6 +46,15 @@ services:
       bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
       '
 
+  redis:
+    image: 'bitnami/redis:latest'
+    ports:
+      - '6379:6379'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
+
+
 
 networks:
   default:
