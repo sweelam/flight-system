@@ -1,17 +1,14 @@
 package com.flight.api;
 
 import com.flight.dto.Flight;
-import com.flight.exceptions.CustomerApiException;
-import com.flight.service.EmailService;
+import com.flight.service.FlightService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URI;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,10 +28,10 @@ public class FlightController {
             )
     );
 
-    private final EmailService emailService;
+    private final FlightService flightService;
 
-    public FlightController(EmailService emailService) {
-        this.emailService = emailService;
+    public FlightController(FlightService flightService) {
+        this.flightService = flightService;
     }
 
     @GetMapping("")
@@ -44,17 +41,9 @@ public class FlightController {
 
     @PostMapping("")
     public ResponseEntity<Flight> bookNewFlight(@RequestBody Flight flight) {
-        UUID uuid = UUID.randomUUID();
-        Flight flightAdded = new Flight(uuid, flight.flightName(), null == flight.time() ? Instant.now() : flight.time(), flight.customerEmail());
+        Flight flightAdded = new Flight(UUID.randomUUID(), flight.flightName(), null == flight.time() ? Instant.now() : flight.time(), flight.customerEmail());
 
-        if (!emailService.customerFound(flightAdded.customerEmail())) {
-            throw new CustomerApiException("No customer found with provided email", HttpStatus.NOT_FOUND);
-        }
-
-        allFlights.add(flightAdded);
-
-        // push email event
-        emailService.sendEmail(flight.customerEmail(), flight.flightName());
+        flightService.bookNewFlight(flightAdded, allFlights);
 
         return new ResponseEntity(flightAdded, HttpStatus.CREATED);
     }

@@ -40,7 +40,7 @@ services:
       # blocks until kafka is reachable
       bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
 
-      bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic flight.email.topic              --replication-factor 1 --partitions 2
+      bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic flight.email.topic  --replication-factor 1 --partitions 2
      
       echo -e 'Created kafka topics:'
       bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
@@ -52,7 +52,6 @@ services:
       - '6379:6379'
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
-
 
 
 

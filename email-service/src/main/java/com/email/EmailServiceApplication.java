@@ -8,7 +8,7 @@ import org.springframework.kafka.annotation.KafkaListener;
 
 @SpringBootApplication
 public class EmailServiceApplication {
-	private final Logger LOG = LoggerFactory.getLogger(EmailServiceApplication.class);
+	private final Logger logger = LoggerFactory.getLogger(EmailServiceApplication.class);
 
 	public static void main(String[] args) {
 		SpringApplication.run(EmailServiceApplication.class, args);
@@ -17,6 +17,6 @@ public class EmailServiceApplication {
 
 	@KafkaListener(topics = "${app.kafka.topic-name}")
 	public void consumeEmailEvent(String event) {
-		LOG.info("Event received {}", event);
+		logger.info("Event received {}", event);
 	}
 }
