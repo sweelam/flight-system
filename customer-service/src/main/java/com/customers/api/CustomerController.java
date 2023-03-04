@@ -21,6 +21,7 @@ public class CustomerController {
             new Customer(1, "Mia Andrey", "mia.andrey@gmail.com", UUID.randomUUID().toString()),
             new Customer(1, "Hesham Masoud", "hesham.masoud@gmail.com", UUID.randomUUID().toString())
     );
+
     @GetMapping("")
     public ResponseEntity<List<Customer>> getAllCustomers() {
         return ResponseEntity.ok(allCustomers);
