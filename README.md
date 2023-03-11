@@ -1,4 +1,4 @@
-<img src="img.png"  width="1400" height="900">
+<img src="hld-latest.png" width="1500" height="1100">
 
 # Overview
 This demo is a quick snapshot on microservices, it shows couple of use cases like  
