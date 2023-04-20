@@ -25,8 +25,8 @@ public class GlobalExceptionHandler {
   }
 
 
-  @ExceptionHandler(value = {CustomerApiException.class})
-  public ResponseEntity<AbstractMap.SimpleEntry<String, String>> handle(CustomerApiException exception) {
+  @ExceptionHandler(value = {FlightApiException.class})
+  public ResponseEntity<AbstractMap.SimpleEntry<String, String>> handle(FlightApiException exception) {
     LOG.error("Request could not be processed: ", exception);
 
     AbstractMap.SimpleEntry<String, String> response =

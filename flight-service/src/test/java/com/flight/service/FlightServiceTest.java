@@ -1,7 +1,7 @@
 package com.flight.service;
 
 import com.flight.dto.Flight;
-import com.flight.exceptions.CustomerApiException;
+import com.flight.exceptions.FlightApiException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
@@ -31,7 +31,7 @@ class FlightServiceTest {
         Flight flightAdded =
                 new Flight(UUID.randomUUID(), "Turkey-111", Instant.now() , "alex@gmail.com");
 
-        var assertEx = assertThrows(CustomerApiException.class,
+        var assertEx = assertThrows(FlightApiException.class,
                 () -> flightService.bookNewFlight(flightAdded, allFlights)
         );
 
@@ -51,7 +51,7 @@ class FlightServiceTest {
 
         flightService.bookNewFlight(flightAdded, allFlights);
 
-        var assertEx = assertThrows(CustomerApiException.class,
+        var assertEx = assertThrows(FlightApiException.class,
                 () -> flightService.bookNewFlight(flightAdded, allFlights)
         );
 

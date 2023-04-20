@@ -43,6 +43,8 @@ opentracing:
   jaeger:
     http-sender:
       url: http://localhost:14268/api/traces
+    probabilistic-sampler:
+      sampling-rate: 0.5
 
 management:
   endpoints:

@@ -1,7 +1,7 @@
 package com.flight.service;
 
 import com.flight.dto.Flight;
-import com.flight.exceptions.CustomerApiException;
+import com.flight.exceptions.FlightApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ public class FlightService {
 
     public void bookNewFlight(final Flight flightAdded, List<Flight> allFlights ) {
         if (!customerService.customerFound(flightAdded.customerEmail())) {
-            throw new CustomerApiException("No customer found with provided email", HttpStatus.NOT_FOUND);
+            throw new FlightApiException("No customer found with provided email", HttpStatus.NOT_FOUND);
         }
 
         allFlights.stream()
@@ -30,7 +30,7 @@ public class FlightService {
                 )
                 .findAny()
                 .ifPresent(fl -> {
-                    throw new CustomerApiException("Flight already booked!", HttpStatus.BAD_REQUEST);
+                    throw new FlightApiException("Flight already booked!", HttpStatus.BAD_REQUEST);
                 });
 
         allFlights.add(flightAdded);
