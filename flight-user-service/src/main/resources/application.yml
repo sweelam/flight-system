@@ -1,0 +1,36 @@
+server:
+  port: "8081"
+  http2:
+    enabled: "true"
+
+spring:
+  datasource:
+    username: ${USERNAME:db_user}
+    url: jdbc:postgresql://localhost:5432/flight-booking
+    password: ${PASSWORD:123qwe}
+  application:
+    name: user-service
+  threads:
+    virtual:
+      enabled: "true"
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 2
+    out-of-order: true
+    ignore-migration-patterns: "*:missing, *:ignored, *:future"
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics
+  tracing:
+    url: http://localhost:4318/v1/traces
+    sampling:
+      probability: 1.0
+
+
+app:
+  private-key: amhza2RoaGtqaHNrZmpoa3NqZGhramhzbWJtYnZsa2xza2ZqaDkzNzA3MDkza2poZGtoa2RzamZo
+

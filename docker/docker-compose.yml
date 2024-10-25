@@ -1,0 +1,92 @@
+version: '4.0'
+
+services:
+  postgres:
+    container_name: flight-system-db
+    image: postgres
+    restart: unless-stopped
+#    volumes:
+#      - ./postgres-db:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-db_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123qwe}
+      POSTGRES_DB: ${POSTGRES_DB:-flight-booking}
+      PGDATA: /data/postgres/mydb
+
+  zookeeper:
+    image: 'zookeeper:3.6.3'
+    container_name: 'zookeeper'
+    ports:
+      - '2181:2181'
+
+  kafka:
+    image: 'wurstmeister/kafka:2.13-2.8.1'
+    container_name: 'kafka'
+    ports:
+      - '9092:9092'
+    environment:
+      KAFKA_LISTENERS: "INTERNAL://:29092,EXTERNAL://:9092"
+      KAFKA_ADVERTISED_LISTENERS: "INTERNAL://kafka:29092,EXTERNAL://localhost:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "INTERNAL"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_BROKER_ID: 1
+    volumes:
+      - /var/lib/kafka/data
+    depends_on:
+      - zookeeper
+
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    ports:
+      - '8080:8080'
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+  jaeger-allinone:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - '16686:16686'
+      - '4318:4318'
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  init-kafka:
+    image: 'bitnami/kafka:3'
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: |
+      '
+      # blocks until kafka is reachable
+      bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+
+      bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic flight.email.topic  --replication-factor 1 --partitions 2
+     
+      echo -e 'Created kafka topics:'
+      bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+      '
+
+
+  redis:
+    image: 'bitnami/redis:latest'
+    ports:
+      - '6379:6379'
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+
+networks:
+  flight-network:
