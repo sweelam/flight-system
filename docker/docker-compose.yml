@@ -5,14 +5,15 @@ services:
     container_name: flight-system-db
     image: postgres
     restart: unless-stopped
-#    volumes:
-#      - ./postgres-db:/docker-entrypoint-initdb.d
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-db_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-123qwe}
-      POSTGRES_DB: ${POSTGRES_DB:-flight-booking}
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: 123qwe
+      POSTGRES_DB: flight-booking
       PGDATA: /data/postgres/mydb
 
   zookeeper:
@@ -90,3 +91,6 @@ services:
 
 networks:
   flight-network:
+
+volumes:
+  postgres-data:

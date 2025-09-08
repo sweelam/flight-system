@@ -8,7 +8,7 @@
 		<version>3.2.3</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.user</groupId>
+	<groupId>com.users</groupId>
 	<artifactId>flight-user-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>flight-user-service</name>

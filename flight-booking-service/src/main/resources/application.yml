@@ -35,7 +35,7 @@ app:
   tracing:
       url: http://localhost:4318/v1/traces
   user-service:
-    url: http://localhost:8888/api/public/users
+    url: http://localhost:8081/api/public/users
   flight-service:
-    url: http://localhost:8888/api/flights/search
+    url: http://localhost:7777/api/flights/search
 

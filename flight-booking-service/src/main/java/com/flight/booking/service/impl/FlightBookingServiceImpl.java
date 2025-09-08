@@ -6,6 +6,7 @@ import com.flight.booking.dto.UserResponse;
 import com.flight.booking.exceptions.BookingApiException;
 import com.flight.booking.mappers.FlightBookingMapper;
 import com.flight.booking.repo.FlightBookingRepo;
+import com.flight.booking.service.EmailService;
 import com.flight.booking.service.FlightBookingService;
 import com.flight.booking.user.UserClient;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     private final UserClient userClient;
     private final RestTemplate restTemplate;
     private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+    private final EmailService emailService;
 
     @Value("${app.user-service.url}")
     private String userServiceUrl;
@@ -73,7 +75,8 @@ public class FlightBookingServiceImpl implements FlightBookingService {
                                 var savedBooking = flightBookingRepo.save(bookingEntity);
                                 var booking = flightBookingMapper.convertToBookingtDto(savedBooking);
 
-                                buildEmailEvent(userResponse.getBody().email(), flightResponse.getBody().flightNumber());
+                                emailService.sendEmail(userResponse.getBody().email(),
+                                        flightResponse.getBody().flightNumber());
 
                                 return booking;
                             });
