@@ -1,0 +1,5 @@
+com/flight/search/service/FlightDtoSearchServiceTest.class
+com/flight/search/infra/IntegrationTestSupport.class
+com/flight/search/api/FlightSearchControllerTest.class
+com/flight/search/FlightDtoSearchServiceApplicationTests.class
+com/flight/search/utils/TimeUtilsTest.class
