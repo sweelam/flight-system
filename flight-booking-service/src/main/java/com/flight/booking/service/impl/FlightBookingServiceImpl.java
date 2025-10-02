@@ -1,15 +1,20 @@
 package com.flight.booking.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flight.booking.dto.BookingDto;
 import com.flight.booking.dto.FlightResponse;
 import com.flight.booking.dto.UserResponse;
+import com.flight.booking.entity.Outbox;
 import com.flight.booking.exceptions.BookingApiException;
 import com.flight.booking.mappers.FlightBookingMapper;
 import com.flight.booking.repo.FlightBookingRepo;
+import com.flight.booking.repo.OutboxRepo;
 import com.flight.booking.service.EmailService;
 import com.flight.booking.service.FlightBookingService;
 import com.flight.booking.user.UserClient;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
@@ -18,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +42,8 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     private final RestTemplate restTemplate;
     private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
     private final EmailService emailService;
+    private final OutboxRepo outboxRepo;
+    private final ObjectMapper omMap = new ObjectMapper();
 
     @Value("${app.user-service.url}")
     private String userServiceUrl;
@@ -58,6 +66,7 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     }
 
     @Override
+    @Transactional
     public CompletableFuture<BookingDto> createBooking(BookingDto bookingDto) {
         var userDetails = isUserIdValid(bookingDto.userId());
         var flightDetails = isFlightIdValid(bookingDto.flightId());
@@ -70,15 +79,13 @@ public class FlightBookingServiceImpl implements FlightBookingService {
 
                         if (isValidUserResponse(userResponse) && isValidFlightResponse(flightResponse)) {
 
-                            return CompletableFuture.supplyAsync(() -> {
-                                var bookingEntity = flightBookingMapper.convertToBookingEntity(bookingDto);
-                                var savedBooking = flightBookingRepo.save(bookingEntity);
-                                var booking = flightBookingMapper.convertToBookingtDto(savedBooking);
+                            return CompletableFuture.supplyAsync(() ->
+                            {
+                                assert flightResponse.getBody() != null;
+                                assert userResponse.getBody() != null;
 
-                                emailService.sendEmail(userResponse.getBody().email(),
-                                        flightResponse.getBody().flightNumber());
-
-                                return booking;
+                                return bookAndNotify(bookingDto, flightResponse.getBody(),
+                                        userResponse.getBody());
                             });
 
                         } else {
@@ -89,6 +96,26 @@ public class FlightBookingServiceImpl implements FlightBookingService {
                         throw new BookingApiException("Error occurred while saving flight details " + e);
                     }
                 });
+    }
+
+    @SneakyThrows
+    private BookingDto bookAndNotify(BookingDto bookingDto, FlightResponse flightResponse,
+                                       UserResponse userResponse) {
+        var bookingEntity = flightBookingMapper.convertToBookingEntity(bookingDto);
+        var savedBooking = flightBookingRepo.save(bookingEntity);
+        var booking = flightBookingMapper.convertToBookingtDto(savedBooking);
+
+        var payload =
+                omMap.writeValueAsString(Map.of("bookingId", booking.bookingId()));
+
+        outboxRepo.save(
+                new Outbox("BOOKING_INITIATED", payload, "PENDING")
+        );
+
+        emailService.sendEmail(userResponse.email(),
+                flightResponse.flightNumber());
+
+        return booking;
     }
 
     private static boolean isValidFlightResponse(ResponseEntity<FlightResponse> flightResponse) {
