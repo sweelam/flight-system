@@ -9,6 +9,8 @@ import org.mapstruct.Mapping;
 @Mapper(config = MapperSpringConfig.class)
 public interface FlightBookingMapper {
     @Mapping(source = "id", target = "bookingId")
+    @Mapping(source = "userId", target = "userId")
+    @Mapping(source = "flightId", target = "flightId")
     BookingDto convertToBookingtDto(Booking booking);
 
     @Mapping(source = "bookingId", target = "id")

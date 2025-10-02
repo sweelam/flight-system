@@ -1,5 +1,6 @@
 package com.flight.booking.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.flight.booking.dto.BookingDto;
 import com.flight.booking.dto.FlightResponse;
@@ -9,27 +10,25 @@ import com.flight.booking.exceptions.BookingApiException;
 import com.flight.booking.mappers.FlightBookingMapper;
 import com.flight.booking.repo.FlightBookingRepo;
 import com.flight.booking.repo.OutboxRepo;
-import com.flight.booking.service.EmailService;
 import com.flight.booking.service.FlightBookingService;
 import com.flight.booking.user.UserClient;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestTemplate;
+import jakarta.annotation.PreDestroy;
 
+import java.text.DateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
-import static com.flight.booking.builders.EmailBuilders.buildEmailEvent;
 import static java.util.Objects.nonNull;
 
 @Service
@@ -41,9 +40,12 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     private final UserClient userClient;
     private final RestTemplate restTemplate;
     private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
-    private final EmailService emailService;
     private final OutboxRepo outboxRepo;
-    private final ObjectMapper omMap = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+    private final TransactionTemplate transactionTemplate;
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Value("${app.user-service.url}")
     private String userServiceUrl;
@@ -66,56 +68,57 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     }
 
     @Override
-    @Transactional
     public CompletableFuture<BookingDto> createBooking(BookingDto bookingDto) {
         var userDetails = isUserIdValid(bookingDto.userId());
         var flightDetails = isFlightIdValid(bookingDto.flightId());
 
-        return CompletableFuture.allOf(userDetails, flightDetails)
-                .thenComposeAsync(v -> {
-                    try {
-                        var flightResponse = flightDetails.get();
-                        var userResponse = userDetails.get();
-
-                        if (isValidUserResponse(userResponse) && isValidFlightResponse(flightResponse)) {
-
-                            return CompletableFuture.supplyAsync(() ->
-                            {
-                                assert flightResponse.getBody() != null;
-                                assert userResponse.getBody() != null;
-
-                                return bookAndNotify(bookingDto, flightResponse.getBody(),
-                                        userResponse.getBody());
-                            });
-
-                        } else {
+        return userDetails.thenCombine(flightDetails,
+                (userResponse, flightResponse) -> {
+                        if (!(isValidUserResponse(userResponse) && isValidFlightResponse(flightResponse))) {
                             throw new BookingApiException("Invalid user or flight ID");
                         }
-                    } catch (InterruptedException | ExecutionException e) {
-                        Thread.currentThread().interrupt();
-                        throw new BookingApiException("Error occurred while saving flight details " + e);
+
+                        return bookAndNotify(bookingDto);
+                })
+                .exceptionally(ex -> {
+                    if (ex instanceof BookingApiException) {
+                        throw (BookingApiException) ex;
                     }
+                    log.error("Error occurred while booking flight", ex);
+                    throw new BookingApiException("Error occurred while saving flight details %s"
+                            .formatted(ex.getMessage()));
                 });
     }
 
-    @SneakyThrows
-    private BookingDto bookAndNotify(BookingDto bookingDto, FlightResponse flightResponse,
-                                       UserResponse userResponse) {
-        var bookingEntity = flightBookingMapper.convertToBookingEntity(bookingDto);
-        var savedBooking = flightBookingRepo.save(bookingEntity);
-        var booking = flightBookingMapper.convertToBookingtDto(savedBooking);
 
-        var payload =
-                omMap.writeValueAsString(Map.of("bookingId", booking.bookingId()));
+    private BookingDto bookAndNotify(BookingDto bookingDto) {
+        return transactionTemplate.execute(ax -> {
+            var bookingEntity = flightBookingMapper.convertToBookingEntity(bookingDto);
+            var savedBooking = flightBookingRepo.save(bookingEntity);
+            var booking = flightBookingMapper.convertToBookingtDto(savedBooking);
 
-        outboxRepo.save(
-                new Outbox("BOOKING_INITIATED", payload, "PENDING")
-        );
+            String payload = null;
+            try {
+                payload = objectMapper.writeValueAsString(
+                        Map.of("bookingId", booking.bookingId(),
+                                "userId", booking.userId(),
+                                "flightId", booking.flightId(),
+                                "bookingTime", LocalDateTime.now().format(DATE_TIME_FORMATTER))
+                );
 
-        emailService.sendEmail(userResponse.email(),
-                flightResponse.flightNumber());
-
-        return booking;
+            outboxRepo.save(
+                    Outbox.builder()
+                            .type("BOOKING_INITIATED")
+                            .payload(payload)
+                            .status("PENDING")
+                            .build()
+            );
+            } catch (JsonProcessingException e) {
+                throw new BookingApiException("Error occurred while converting booking to json %s"
+                        .formatted(e.getMessage()));
+            }
+             return booking;
+        });
     }
 
     private static boolean isValidFlightResponse(ResponseEntity<FlightResponse> flightResponse) {
@@ -142,5 +145,18 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     @Override
     public BookingDto updateBooking(BookingDto bookingDto) {
         return null;
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(60, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException e) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }
