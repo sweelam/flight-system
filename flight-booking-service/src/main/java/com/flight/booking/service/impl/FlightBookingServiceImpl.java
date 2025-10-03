@@ -34,6 +34,9 @@ import static java.util.Objects.nonNull;
 @Slf4j
 @RequiredArgsConstructor
 public class FlightBookingServiceImpl implements FlightBookingService {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
     private final FlightBookingRepo flightBookingRepo;
     private final FlightBookingMapper flightBookingMapper;
     private final UserClient userClient;
@@ -42,9 +45,6 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
-
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     @Value("${app.user-service.url}")
     private String userServiceUrl;
