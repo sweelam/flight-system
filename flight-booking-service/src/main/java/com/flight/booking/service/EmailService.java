@@ -19,7 +19,7 @@ public class EmailService {
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final OutboxRepo outboxRepo;
 
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 10000)     // every 10 seconds
     public void sendEmail() {
         List<Outbox> outboxes = outboxRepo.findAllByStatus("PENDING", Limit.of(10))
                 .stream()
