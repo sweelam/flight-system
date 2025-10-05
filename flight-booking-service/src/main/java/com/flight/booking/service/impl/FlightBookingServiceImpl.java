@@ -36,6 +36,9 @@ import static java.util.Objects.nonNull;
 public class FlightBookingServiceImpl implements FlightBookingService {
     private static final DateTimeFormatter DATE_TIME_FORMATTER =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final String BOOKING_INITIATED = "BOOKING_INITIATED";
+    public static final String BOOKING_EMAIL_NOTIFY = "booking.email.notify";
+    public static final String PENDING = "PENDING";
 
     private final FlightBookingRepo flightBookingRepo;
     private final FlightBookingMapper flightBookingMapper;
@@ -55,14 +58,14 @@ public class FlightBookingServiceImpl implements FlightBookingService {
     @Override
     public List<BookingDto> getBookings() {
         return flightBookingRepo.findAll()
-                .stream().map(flightBookingMapper::convertToBookingtDto)
+                .stream().map(flightBookingMapper::convertToBookingDto)
                 .toList();
     }
 
     @Override
     public BookingDto getBookingById(Integer bookingId) {
         return flightBookingRepo.findById(bookingId)
-                .map(flightBookingMapper::convertToBookingtDto)
+                .map(flightBookingMapper::convertToBookingDto)
                 .orElseThrow(() -> new BookingApiException("Booking not found"));
     }
 
@@ -94,24 +97,24 @@ public class FlightBookingServiceImpl implements FlightBookingService {
         return transactionTemplate.execute(ax -> {
             var bookingEntity = flightBookingMapper.convertToBookingEntity(bookingDto);
             var savedBooking = flightBookingRepo.save(bookingEntity);
-            var booking = flightBookingMapper.convertToBookingtDto(savedBooking);
+            var booking = flightBookingMapper.convertToBookingDto(savedBooking);
 
-            String payload = null;
             try {
-                payload = objectMapper.writeValueAsString(
+                String payload = objectMapper.writeValueAsString(
                         Map.of("bookingId", booking.bookingId(),
                                 "userId", booking.userId(),
                                 "flightId", booking.flightId(),
                                 "bookingTime", LocalDateTime.now().format(DATE_TIME_FORMATTER))
                 );
 
-            outboxRepo.save(
-                    Outbox.builder()
-                            .type("BOOKING_INITIATED")
-                            .payload(payload)
-                            .status("PENDING")
-                            .build()
-            );
+                outboxRepo.save(
+                        Outbox.builder()
+                                .type(BOOKING_INITIATED)
+                                .payload(payload)
+                                .status(PENDING)
+                                .topic(BOOKING_EMAIL_NOTIFY)
+                                .build()
+                );
             } catch (JsonProcessingException e) {
                 throw new BookingApiException("Error occurred while converting booking to json %s"
                         .formatted(e.getMessage()));

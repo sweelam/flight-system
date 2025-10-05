@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 @Configuration
+@EnableScheduling
 public class AppConfig {
     private static final String DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ss'Z'";
 

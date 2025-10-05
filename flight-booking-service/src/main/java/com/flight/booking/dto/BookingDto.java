@@ -1,5 +1,6 @@
 package com.flight.booking.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.flight.booking.dto.enums.BookingStatus;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,7 +15,17 @@ public record BookingDto(
    @NotNull(message = "flightId can't be null")
    Integer flightId,
 
-//   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
+   @JsonFormat(shape = JsonFormat.Shape.STRING,
+           pattern = "yyyy-MM-dd'T'HH:mm:ss",
+           timezone = "UTC"
+   )
    Instant bookingTime,
-   BookingStatus status
-) {}
+
+   BookingStatus status) {
+    public Instant bookingTimeOrDefault() {
+        if (bookingTime == null) {
+            return Instant.now();
+        }
+        return bookingTime;
+    }
+}

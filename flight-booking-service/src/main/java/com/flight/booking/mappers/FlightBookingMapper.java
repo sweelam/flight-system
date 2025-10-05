@@ -11,9 +11,10 @@ public interface FlightBookingMapper {
     @Mapping(source = "id", target = "bookingId")
     @Mapping(source = "userId", target = "userId")
     @Mapping(source = "flightId", target = "flightId")
-    BookingDto convertToBookingtDto(Booking booking);
+    BookingDto convertToBookingDto(Booking booking);
 
     @Mapping(source = "bookingId", target = "id")
     @Mapping(source = "status", target = "status", defaultValue = "PENDING")
-    Booking convertToBookingEntity(BookingDto flightDto);
+    @Mapping(target = "bookingTime", expression = "java(bookingDto.bookingTimeOrDefault())")
+    Booking convertToBookingEntity(BookingDto bookingDto);
 }

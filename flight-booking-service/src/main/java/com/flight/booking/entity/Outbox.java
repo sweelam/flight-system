@@ -1,10 +1,12 @@
 package com.flight.booking.entity;
 
+import io.hypersistence.utils.hibernate.type.json.JsonType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 
 @Entity
 @Table(name = "outbox")
@@ -21,7 +23,11 @@ public class Outbox {
 
     private String type;
 
+    @Type(JsonType.class)
+    @Column(columnDefinition = "json")
     private String payload;
 
     private String status;
+
+    private String topic;
 }

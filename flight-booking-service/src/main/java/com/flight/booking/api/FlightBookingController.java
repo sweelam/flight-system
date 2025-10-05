@@ -33,7 +33,6 @@ public class FlightBookingController {
 
     @PostMapping
     public CompletableFuture<ResponseEntity<BookingDto>> createBooking(@Valid @RequestBody BookingDto bookingDto) {
-
         return flightBookingService.createBooking(bookingDto)
                 .thenApply(bookingResponse -> new ResponseEntity<>(bookingResponse, HttpStatus.CREATED));
 
