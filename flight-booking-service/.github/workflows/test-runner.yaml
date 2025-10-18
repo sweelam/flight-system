@@ -1,5 +1,9 @@
 name: "booking-service-test-runner"
-on: [push]
+on:
+  push:
+    branches: [ * ]
+  pull_request:
+    branches: [ main ]
 jobs:
   check-bats-version:
     runs-on: ubuntu-latest
