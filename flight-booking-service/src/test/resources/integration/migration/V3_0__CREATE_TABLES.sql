@@ -11,3 +11,13 @@ CREATE TABLE bookings (
 CREATE INDEX idx_bookings_user_id ON bookings(user_id);
 CREATE INDEX idx_bookings_flight_id ON bookings(flight_id);
 CREATE INDEX idx_bookings_status ON bookings(status);
+
+
+CREATE TABLE outbox (
+                        id serial primary key ,
+                        type varchar(255),
+                        payload json,
+                        status varchar(255),
+                        topic varchar(255) NOT NULL,
+                        created_at timestamp DEFAULT CURRENT_TIMESTAMP
+);

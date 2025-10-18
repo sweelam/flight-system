@@ -34,23 +34,23 @@ import static java.util.Objects.nonNull;
 @Slf4j
 @RequiredArgsConstructor
 public class FlightBookingServiceImpl implements FlightBookingService {
-    private static final DateTimeFormatter DATE_TIME_FORMATTER =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    public static final String PENDING = "PENDING";
     public static final String BOOKING_INITIATED = "BOOKING_INITIATED";
     public static final String BOOKING_EMAIL_NOTIFY = "booking.email.notify";
-    public static final String PENDING = "PENDING";
 
+    private static final DateTimeFormatter DATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    private final UserClient userClient;
+    private final OutboxRepo outboxRepo;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
     private final FlightBookingRepo flightBookingRepo;
     private final FlightBookingMapper flightBookingMapper;
-    private final UserClient userClient;
-    private final RestTemplate restTemplate;
-    private final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
-    private final OutboxRepo outboxRepo;
-    private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
 
-    @Value("${app.user-service.url}")
-    private String userServiceUrl;
+    private final ExecutorService executorService =
+            Executors.newVirtualThreadPerTaskExecutor();
 
     @Value("${app.flight-service.url}")
     private String flightServiceUrl;
