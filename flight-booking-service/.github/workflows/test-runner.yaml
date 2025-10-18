@@ -1,7 +1,7 @@
 name: "booking-service-test-runner"
 on:
   push:
-    branches: [ * ]
+    branches: [ '**' ]
   pull_request:
     branches: [ main ]
 jobs:
