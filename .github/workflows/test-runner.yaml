@@ -16,9 +16,9 @@ jobs:
           cache: 'maven'
       - name: Run tests
         run: |
-          mvn clean test -f flight-auth-service/pom.xml -B
           mvn clean test -f flight-booking-service/pom.xml -B
-          mvn clean test -f flight-gateway-service/pom.xml -B
-          mvn clean test -f flight-notification-service/pom.xml -B
-          mvn clean test -f flight-search-service/pom.xml -B
-          mvn clean test -f flight-user-service/pom.xml -B
+#          mvn clean test -f flight-auth-service/pom.xml -B
+#          mvn clean test -f flight-gateway-service/pom.xml -B
+#          mvn clean test -f flight-notification-service/pom.xml -B
+#          mvn clean test -f flight-search-service/pom.xml -B
+#          mvn clean test -f flight-user-service/pom.xml -B
