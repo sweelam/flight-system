@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -91,9 +90,6 @@ class FLightBookingControllerTest extends IntegrationTestSupport {
         var userId = 2;
         var flightId = 1;
 
-        var request = new BookingDto(null,
-                userId, flightId, null, null);
-
         var userResponse =
                 new UserResponse(2, "abas.gmail.com", "abas");
 
@@ -101,15 +97,20 @@ class FLightBookingControllerTest extends IntegrationTestSupport {
                 .willReturn(ok(objectMapper.writeValueAsString(userResponse))
                         .withHeader("Content-Type", "application/json")));
 
-        var deptTime = Instant.now();
-        var arrivalTime = Instant.now();
-
-        var flightResponse = new FlightResponse(1, "AKE123", "DXB",
-                "Cairo", deptTime, arrivalTime, BigDecimal.valueOf(2514));
+        var flightResponse = new FlightResponse(1,
+                "AKE123",
+                "DXB",
+                "Cairo",
+                Instant.now(),
+                Instant.now().plusSeconds(60*60*8),
+                BigDecimal.valueOf(2514));
 
         flightServiceWireMockServer.stubFor(WireMock.get("/" + flightId)
                 .willReturn(ok(objectMapper.writeValueAsString(flightResponse))
                 .withHeader("Content-Type", "application/json")));
+
+        var request = new BookingDto(null,
+                userId, flightId, null, null);
 
         MvcResult mvcResult = mockMvc.perform(
                 post(FLIGHT_BOOKING_URL)
